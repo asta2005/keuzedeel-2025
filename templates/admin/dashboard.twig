@@ -1,0 +1,11 @@
+{% extends 'layout.twig' %}
+{% block content %}
+<h2>Admin dashboard</h2>
+<p>Aantal vacatures: {{ cntV }}</p>
+<p>Aantal contacten: {{ cntC }}</p>
+<ul>
+  <li><a href="/?page=admin_vacancies">Beheer vacatures</a></li>
+  <li><a href="/?page=admin_contacts">Bekijk contactberichten</a></li>
+  <li><a href="/?page=admin_logout">Logout</a></li>
+</ul>
+{% endblock %}

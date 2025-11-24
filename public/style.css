@@ -1,0 +1,21 @@
+/* Basic responsive styles - use consistent Amsterdam red (#ec0000) */
+:root{--brand:#ec0000;--maxw:1000px}
+*{box-sizing:border-box}
+body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;color:#222;line-height:1.5}
+.container{max-width:var(--maxw);margin:0 auto;padding:16px}
+.site-header{background:#fff;border-bottom:1px solid #eee}
+.site-header .nav{display:flex;align-items:center;justify-content:space-between}
+.site-header nav a{margin-left:16px;text-decoration:none;color:#222}
+.brand img{height:40px}
+.hero{background:#f7f7f7;padding:28px;border-radius:8px;margin:16px 0}
+.btn{display:inline-block;background:var(--brand);color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none}
+.list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+.card{border:1px solid #eee;padding:12px;border-radius:8px;background:#fff}
+form label{display:block;margin:8px 0}
+input[type=text],input[type=email],textarea{width:100%;padding:8px;border:1px solid #ddd;border-radius:4px}
+button{background:var(--brand);color:#fff;padding:10px 14px;border-radius:6px;border:none}
+.site-footer{border-top:1px solid #eee;padding:12px;margin-top:24px;text-align:center;color:#666}
+.flash{background:#e6ffe6;padding:8px;border:1px solid #b6e6b6}
+@media (max-width:600px){
+  .site-header .nav{flex-direction:column;align-items:flex-start}
+}

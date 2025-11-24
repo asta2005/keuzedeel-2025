@@ -1,0 +1,11 @@
+{% extends 'layout.twig' %}
+{% block content %}
+<h2>Contactberichten</h2>
+<ul>
+{% for c in contacts %}
+  <li><strong>{{ c.name }}</strong> ({{ c.email }}) - {{ c.message }} - {{ c.created_at }}</li>
+{% else %}
+  <li>Geen berichten.</li>
+{% endfor %}
+</ul>
+{% endblock %}

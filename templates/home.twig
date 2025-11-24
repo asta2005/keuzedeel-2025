@@ -1,11 +1,13 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ message }}</h1>
-    <p>Je hebt Slim Framework + Twig succesvol draaien!</p>
-</body>
-</html>
+{% extends "layout.twig" %}
+{% block content %}
+<section class="hero">
+  <h1>Project Management Bureau Amsterdam</h1>
+  <p>Wij leveren project-, programma- en procesmanagement voor de stad. Word onderdeel van ons team.</p>
+  <p><a class="btn" href="/?page=vacancies">Bekijk vacatures</a></p>
+</section>
+
+<section>
+  <h2>Wie zijn wij?</h2>
+  <p>Vakmensen die Amsterdam samen laten werken aan projecten van belang.</p>
+</section>
+{% endblock %}

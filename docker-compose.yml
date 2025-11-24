@@ -9,7 +9,7 @@ services:
 
   nginx:
     image: nginx:latest
-    container_name: keuze_m9_nginx
+    container_name: keuze_m9_php_m9_nginx
     ports:
       - "81:80"
     depends_on:
@@ -36,7 +36,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin:latest
-    container_name: sd3_m9_phpmyadmin
+    container_name: sd3_keuze_phpmyadmin
     ports:
       - "8005:80"
     depends_on:

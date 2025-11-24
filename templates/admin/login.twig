@@ -1,0 +1,10 @@
+{% extends 'layout.twig' %}
+{% block content %}
+<h2>Admin login</h2>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form method="post" action="/?page=admin_login">
+  <label>Gebruiker<input type="text" name="user"></label>
+  <label>Wachtwoord<input type="password" name="pass"></label>
+  <button type="submit">Login</button>
+</form>
+{% endblock %}

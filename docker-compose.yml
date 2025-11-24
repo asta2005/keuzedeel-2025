@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  php:
+    image: wodby/php:latest
+    container_name: keuze_m9_php
+    volumes:
+      - ./:/var/www/html
+
+  nginx:
+    image: nginx:latest
+    container_name: keuze_m9_nginx
+    ports:
+      - "81:80"
+    depends_on:
+      - php
+      - mariadb
+    volumes:
+      - ./:/var/www/html
+      - ./docker:/etc/nginx/conf.d
+    links:
+      - php
+
+  mariadb:
+    image: mariadb:latest
+    container_name: keuze_m9_mariadb
+    ports:
+      - "3356:3306"
+    environment:
+      MYSQL_DATABASE: "${DB_NAME}"
+      MYSQL_USER: "${DB_USERNAME}"
+      MYSQL_PASSWORD: "${DB_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+    volumes:
+      - ./db_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: sd3_m9_phpmyadmin
+    ports:
+      - "8005:80"
+    depends_on:
+      - mariadb
+    environment:
+      PMA_HOST: mariadb
+      PMA_USER: "${DB_USERNAME}"
+      PMA_PASSWORD: "${DB_PASSWORD}"

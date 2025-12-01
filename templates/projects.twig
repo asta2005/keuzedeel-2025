@@ -1,0 +1,30 @@
+{% extends 'base.twig' %}
+{% block title %}Alle Projecten{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center">
+        <h2>Projecten & Vacatures</h2>
+        <div>
+            <a class="btn" href="/admin/login">Admin login</a>
+        </div>
+    </div>
+</div>
+
+<div class="grid">
+{% for p in projects %}
+    <div class="card">
+        {% if p.image %}
+            <img class="thumb" src="/{{ p.image }}" alt="Foto {{ p.title }}">
+        {% else %}
+            <div style="height:160px; display:flex; align-items:center; justify-content:center; background:#e9eef0; border-radius:6px">Geen foto</div>
+        {% endif %}
+        <h3>{{ p.title }}</h3>
+        <div class="muted">{{ p.municipality }} — {{ p.created_at }}</div>
+        <p>{{ p.description|raw }}</p>
+        <a class="btn" href="/project/{{ p.id }}">Bekijk</a>
+    </div>
+{% else %}
+    <div class="card">Geen projecten gevonden.</div>
+{% endfor %}
+</div>
+{% endblock %}

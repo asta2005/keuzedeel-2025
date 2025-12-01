@@ -1,21 +1,112 @@
-/* Basic responsive styles - use consistent Amsterdam red (#ec0000) */
-:root{--brand:#ec0000;--maxw:1000px}
-*{box-sizing:border-box}
-body{font-family:Inter,Arial,Helvetica,sans-serif;margin:0;color:#222;line-height:1.5}
-.container{max-width:var(--maxw);margin:0 auto;padding:16px}
-.site-header{background:#fff;border-bottom:1px solid #eee}
-.site-header .nav{display:flex;align-items:center;justify-content:space-between}
-.site-header nav a{margin-left:16px;text-decoration:none;color:#222}
-.brand img{height:40px}
-.hero{background:#f7f7f7;padding:28px;border-radius:8px;margin:16px 0}
-.btn{display:inline-block;background:var(--brand);color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none}
-.list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
-.card{border:1px solid #eee;padding:12px;border-radius:8px;background:#fff}
-form label{display:block;margin:8px 0}
-input[type=text],input[type=email],textarea{width:100%;padding:8px;border:1px solid #ddd;border-radius:4px}
-button{background:var(--brand);color:#fff;padding:10px 14px;border-radius:6px;border:none}
-.site-footer{border-top:1px solid #eee;padding:12px;margin-top:24px;text-align:center;color:#666}
-.flash{background:#e6ffe6;padding:8px;border:1px solid #b6e6b6}
-@media (max-width:600px){
-  .site-header .nav{flex-direction:column;align-items:flex-start}
+/* ---------------------------------------------------
+   AMSTERDAM COLOR SYSTEM
+--------------------------------------------------- */
+:root {
+    --ams-red: #ec0000;
+    --ams-black: #000000;
+    --ams-white: #ffffff;
+    --ams-grey: #f4f4f4;
+}
+
+/* ---------------------------------------------------
+   TOP BAR
+--------------------------------------------------- */
+.ams-topbar {
+    background: var(--ams-black);
+    color: var(--ams-white);
+    font-size: 14px;
+    padding: 6px 20px;
+}
+.ams-topbar a {
+    color: var(--ams-white);
+    text-decoration: none;
+}
+
+/* ---------------------------------------------------
+   HEADER
+--------------------------------------------------- */
+.ams-header {
+    width: 100%;
+    background: var(--ams-white);
+    border-bottom: 3px solid var(--ams-red);
+}
+
+.ams-header-inner {
+    max-width: 1300px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+}
+
+/* ---------------------------------------------------
+   LOGO
+--------------------------------------------------- */
+.ams-logo {
+    display: flex;
+    align-items: center;
+}
+.ams-logo img {
+    height: 42px;
+}
+.ams-logo-text {
+    color: var(--ams-red);
+    font-weight: 700;
+    margin-left: 10px;
+    line-height: 1.1;
+}
+
+/* ---------------------------------------------------
+   NAV BAR
+--------------------------------------------------- */
+.ams-nav ul {
+    list-style: none;
+    display: flex;
+    gap: 28px;
+}
+.ams-nav a {
+    color: #222;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+    padding-bottom: 4px;
+}
+.ams-nav .active a {
+    border-bottom: 3px solid var(--ams-red);
+}
+
+/* ---------------------------------------------------
+   BURGER MENU (mobile)
+--------------------------------------------------- */
+.ams-burger {
+    display: none;
+    font-size: 26px;
+    cursor: pointer;
+}
+
+/* ---------------------------------------------------
+   MOBILE MENU STYLES
+--------------------------------------------------- */
+.ams-mobile-menu {
+    display: none;
+    flex-direction: column;
+    background: var(--ams-white);
+    padding: 10px 20px;
+    border-bottom: 2px solid var(--ams-red);
+}
+.ams-mobile-menu a {
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    color: #222;
+    text-decoration: none;
+}
+
+@media (max-width: 900px) {
+    .ams-nav { display: none; }
+    .ams-burger { display: block; }
+
+    #ams-mobile-menu.show {
+        display: flex;
+    }
 }

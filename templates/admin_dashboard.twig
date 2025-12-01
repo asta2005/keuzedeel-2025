@@ -1,0 +1,21 @@
+{% extends 'base.twig' %}
+{% block title %}Admin dashboard{% endblock %}
+{% block content %}
+<div class="admin-bar">
+    <a class="btn" href="/admin/add">Nieuw project toevoegen</a>
+    <a class="btn" href="/admin/logout">Logout</a>
+</div>
+<h2>Admin dashboard</h2>
+<div class="grid">
+{% for p in projects %}
+    <div class="card">
+        {% if p.image %}<img class="thumb" src="/{{ p.image }}">{% endif %}
+        <h3>{{ p.title }}</h3>
+        <div class="muted">{{ p.municipality }} — {{ p.created_at }}</div>
+        <p>{{ p.description|raw }}</p>
+    </div>
+{% else %}
+    <div class="card">Geen projecten.</div>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+<header class="ams-header">
+
+    <div class="ams-topbar">
+        <a href="https://www.amsterdam.nl" target="_blank">Gemeente Amsterdam</a>
+    </div>
+
+    <div class="ams-header-inner">
+
+        <div class="ams-logo">
+            <img src="/assets/logo.svg" alt="Gemeente Amsterdam">
+            <div class="ams-logo-text">
+                <span>Gemeente</span>
+                <span>Amsterdam</span>
+            </div>
+        </div>
+
+        <nav class="ams-nav">
+            <ul>
+                <li class="{{ current == 'home' ? 'active' : '' }}"><a href="/">Home</a></li>
+                <li class="{{ current == 'werken' ? 'active' : '' }}"><a href="/werken">Werken bij</a></li>
+                <li class="{{ current == 'projecten' ? 'active' : '' }}"><a href="/projects">Opdrachten & Projecten</a></li>
+                <li class="{{ current == 'expertise' ? 'active' : '' }}"><a href="/expertise">Expertise</a></li>
+                <li class="{{ current == 'projectmanagement' ? 'active' : '' }}"><a href="/projectmanagement">Projectmanagement</a></li>
+                <li class="{{ current == 'publicaties' ? 'active' : '' }}"><a href="/publicaties">Publicaties</a></li>
+                <li class="{{ current == 'contact' ? 'active' : '' }}"><a href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+
+        <div class="ams-burger" onclick="toggleMenu()">
+            &#9776;
+        </div>
+
+    </div>
+
+    <div id="ams-mobile-menu" class="ams-mobile-menu">
+        <a href="/">Home</a>
+        <a href="/werken">Werken bij</a>
+        <a href="/projects">Opdrachten & Projecten</a>
+        <a href="/expertise">Expertise</a>
+        <a href="/projectmanagement">Projectmanagement</a>
+        <a href="/publicaties">Publicaties</a>
+        <a href="/contact">Contact</a>
+    </div>
+
+</header>

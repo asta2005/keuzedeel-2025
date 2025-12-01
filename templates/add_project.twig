@@ -1,0 +1,18 @@
+{% extends 'base.twig' %}
+{% block title %}Voeg project toe{% endblock %}
+{% block content %}
+<div class="card" style="max-width:720px; margin:0 auto">
+    <h2>Nieuw project / vacature</h2>
+    <form method="post" action="/admin/add" enctype="multipart/form-data">
+        <label>Titel</label>
+        <input name="title" required>
+        <label>Gemeente</label>
+        <input name="municipality" required placeholder="Bijv. Amsterdam">
+        <label>Beschrijving (HTML toegestaan)</label>
+        <textarea name="description" rows="6"></textarea>
+        <label>Foto van gebouw (jpg/png)</label>
+        <input type="file" name="image" accept="image/*">
+        <button class="btn" type="submit">Opslaan</button>
+    </form>
+</div>
+{% endblock %}

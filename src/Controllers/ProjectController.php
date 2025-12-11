@@ -1,70 +1,47 @@
 <?php
 namespace App\Controllers;
 
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Message\ResponseInterface as Response;
-use Slim\Views\Twig;
+use App\Models\Project;
 
 class ProjectController {
-    private $pdo;
-    private $view;
-    private $uploadDir;
 
-    public function __construct(\PDO $pdo, Twig $view, string $uploadDir) {
-        $this->pdo = $pdo;
-        $this->view = $view;
-        $this->uploadDir = $uploadDir;
-    }
+    /**
+     * Return inner HTML with a grid of projects.
+     */
+    public function index(): string {
+        $projects = Project::all();
 
-    public function list(Request $request, Response $response) {
-        $stmt = $this->pdo->query('SELECT * FROM projects ORDER BY created_at DESC');
-        $projects = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return $this->view->render($response, 'projects.twig', ['projects' => $projects]);
-    }
+        $html = "<h1>Opdrachten en Projecten</h1>";
+        $html .= "<div class=\"projects-grid\">";
 
-    public function single(Request $request, Response $response, $args) {
-        $id = (int)$args['id'];
-        $stmt = $this->pdo->prepare('SELECT * FROM projects WHERE id = ?');
-        $stmt->execute([$id]);
-        $project = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$project) {
-            $response->getBody()->write('Project niet gevonden');
-            return $response->withStatus(404);
-        }
-        return $this->view->render($response, 'project_single.twig', ['project' => $project]);
-    }
+        foreach ($projects as $project) {
+            $html .= "<div class=\"project-card\">";
 
-    public function adminList(Request $request, Response $response) {
-        $stmt = $this->pdo->query('SELECT * FROM projects ORDER BY created_at DESC');
-        $projects = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return $this->view->render($response, 'admin_dashboard.twig', ['projects' => $projects]);
-    }
-
-    public function showAdd(Request $request, Response $response) {
-        return $this->view->render($response, 'add_project.twig', []);
-    }
-
-    public function handleAdd(Request $request, Response $response) {
-        $data = $request->getParsedBody();
-        $title = trim($data['title'] ?? '');
-        $municipality = trim($data['municipality'] ?? '');
-        $description = trim($data['description'] ?? '');
-
-        // handle upload
-        $uploadedFiles = $request->getUploadedFiles();
-        $imageName = null;
-        if (isset($uploadedFiles['image'])) {
-            $up = $uploadedFiles['image'];
-            if ($up->getError() === UPLOAD_ERR_OK) {
-                $basename = bin2hex(random_bytes(8)) . '-' . preg_replace('/[^a-zA-Z0-9._-]/', '', $up->getClientFilename());
-                $target = $this->uploadDir . DIRECTORY_SEPARATOR . $basename;
-                $up->moveTo($target);
-                $imageName = 'uploads/' . $basename;
+            if (!empty($project->img)) {
+                // images are expected in public/img/
+                $html .= "<img src=\"/img/{$project->img}\" alt=\"{$project->title}\">";
             }
+
+            $html .= "<h3>{$project->title}</h3>";
+            $html .= "<p class=\"project-description\">{$project->description}</p>";
+            $html .= "<button type=\"button\">Meer</button>";
+            $html .= "</div>";
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO projects (title, municipality, description, image) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$title, $municipality, $description, $imageName]);
-        return $response->withHeader('Location', '/admin')->withStatus(302);
+        $html .= "</div>";
+
+        // small inline script to toggle card description visibility
+        $html .= <<<SCRIPT
+<script>
+document.querySelectorAll('.project-card button').forEach(function(btn) {
+    btn.addEventListener('click', function () {
+        this.parentElement.classList.toggle('active');
+    });
+});
+</script>
+SCRIPT;
+
+        return $html;
     }
 }
+

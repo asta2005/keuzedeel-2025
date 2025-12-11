@@ -1,47 +1,56 @@
 version: "3.9"
 
 services:
+
   php:
     image: wodby/php:latest
-    container_name: keuze_m9_php
+    container_name: pmb_php
+    working_dir: /var/www/html
     volumes:
       - ./:/var/www/html
+    environment:
+      DB_HOST: mariadb
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - mariadb
 
   nginx:
     image: nginx:latest
-    container_name: keuze_m9_php_m9_nginx
+    container_name: pmb_nginx
     ports:
       - "81:80"
     depends_on:
       - php
-      - mariadb
     volumes:
       - ./:/var/www/html
       - ./docker:/etc/nginx/conf.d
-    links:
-      - php
 
   mariadb:
     image: mariadb:latest
-    container_name: keuze_m9_mariadb
+    container_name: pmb_mariadb
     ports:
       - "3356:3306"
     environment:
-      MYSQL_DATABASE: "${DB_NAME}"
-      MYSQL_USER: "${DB_USERNAME}"
-      MYSQL_PASSWORD: "${DB_PASSWORD}"
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - ./db_data:/var/lib/mysql
 
   phpmyadmin:
     image: phpmyadmin:latest
-    container_name: sd3_keuze_phpmyadmin
+    container_name: pmb_phpmyadmin
     ports:
       - "8005:80"
     depends_on:
       - mariadb
     environment:
       PMA_HOST: mariadb
-      PMA_USER: "${DB_USERNAME}"
-      PMA_PASSWORD: "${DB_PASSWORD}"
+      PMA_USER: ${DB_USERNAME}
+      PMA_PASSWORD: ${DB_PASSWORD}
+
+volumes:
+  db_data:

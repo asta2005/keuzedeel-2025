@@ -5,43 +5,31 @@ use App\Models\Project;
 
 class ProjectController {
 
-    /**
-     * Return inner HTML with a grid of projects.
-     */
     public function index(): string {
-        $projects = Project::all();
+        $projects = Project::orderBy('created_at','desc')->get();
+        $html = '';
 
-        $html = "<h1>Opdrachten en Projecten</h1>";
-        $html .= "<div class=\"projects-grid\">";
+        foreach ($projects as $p) {
+            $img = $p->img
+                ? "<img src='/img/projects/{$p->img}' alt='{$p->title}'>"
+                : "";
 
-        foreach ($projects as $project) {
-            $html .= "<div class=\"project-card\">";
-
-            if (!empty($project->img)) {
-                // images are expected in public/img/
-                $html .= "<img src=\"/img/{$project->img}\" alt=\"{$project->title}\">";
-            }
-
-            $html .= "<h3>{$project->title}</h3>";
-            $html .= "<p class=\"project-description\">{$project->description}</p>";
-            $html .= "<button type=\"button\">Meer</button>";
-            $html .= "</div>";
+            $html .= "
+            <article class='project-card'>
+                {$img}
+                <h3>{$p->title}</h3>
+                <p>{$p->description}</p>
+            </article>";
         }
 
-        $html .= "</div>";
+        return <<<HTML
+<section class="page-wrapper">
+<h1>Opdrachten en projecten</h1>
 
-        // small inline script to toggle card description visibility
-        $html .= <<<SCRIPT
-<script>
-document.querySelectorAll('.project-card button').forEach(function(btn) {
-    btn.addEventListener('click', function () {
-        this.parentElement.classList.toggle('active');
-    });
-});
-</script>
-SCRIPT;
-
-        return $html;
+<div class="projects-grid">
+{$html}
+</div>
+</section>
+HTML;
     }
 }
-

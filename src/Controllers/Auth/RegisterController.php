@@ -8,48 +8,74 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class RegisterController {
 
     public function registerForm(): string {
+        $error = $_GET['error'] ?? '';
+        $success = $_GET['success'] ?? '';
+
+        $errorHtml = $error
+            ? "<div class='flash flash--error'>" . htmlspecialchars($error, ENT_QUOTES, 'UTF-8') . "</div>"
+            : '';
+
+        $successHtml = $success
+            ? "<div class='flash flash--success'>" . htmlspecialchars($success, ENT_QUOTES, 'UTF-8') . "</div>"
+            : '';
+
         return <<<HTML
-<style>
-.register-box {
-    max-width: 420px;
-    margin: 80px auto;
-    padding: 40px;
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-</style>
+<section class="auth-page">
+  <div class="auth-card">
+    <h1>Registreren</h1>
+    <p class="auth-sub">
+      Maak een account aan. Standaard word je geregistreerd als
+      <strong>gebruiker</strong>.
+    </p>
 
-<div class="register-box">
-<h2>Account aanmaken</h2>
+    {$errorHtml}
+    {$successHtml}
 
-<form method="post" action="/register">
+    <form method="post" action="/register" class="auth-form">
+      <label>Gebruikersnaam</label>
+      <input name="username" autocomplete="username" required>
 
-    <label>Gebruikersnaam</label>
-    <input name="username" required>
+      <label>Wachtwoord</label>
+      <input type="password" name="password" autocomplete="new-password" required>
 
-    <label>Wachtwoord</label>
-    <input type="password" name="password" required>
+      <button class="btn btn--primary" type="submit" style="margin-top:14px">
+        Account aanmaken
+      </button>
+    </form>
 
-    <button type="submit">Registreren</button>
-</form>
-
-<p><a href="/login">← Terug naar login</a></p>
-</div>
+    <div class="auth-footer">
+      Heb je al een account? <a href="/login">Inloggen</a>
+    </div>
+  </div>
+</section>
 HTML;
     }
 
-    public function register(Request $request, Response $response): Response {
+    public function register(Request $req, Response $res): Response {
+        $d = $req->getParsedBody();
+        $username = trim($d['username'] ?? '');
+        $password = (string)($d['password'] ?? '');
 
-        $d = $request->getParsedBody();
+        if ($username === '' || $password === '') {
+            return $res
+                ->withHeader("Location", "/register?error=Vul+alle+velden+in")
+                ->withStatus(302);
+        }
+
+        if (User::where('username', $username)->first()) {
+            return $res
+                ->withHeader("Location", "/register?error=Gebruikersnaam+bestaat+al")
+                ->withStatus(302);
+        }
 
         User::create([
-            'username' => $d['username'],
-            'password' => hash('sha256', $d['password']),
+            'username' => $username,
+            'password' => password_hash($password, PASSWORD_DEFAULT),
             'role' => 'user'
         ]);
 
-        return $response->withHeader("Location", "/login")->withStatus(302);
+        return $res
+            ->withHeader("Location", "/login?success=Account+aangemaakt.+Log+nu+in")
+            ->withStatus(302);
     }
 }

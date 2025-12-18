@@ -1,127 +1,86 @@
 <?php
 namespace App\Controllers;
 
-use App\Models\ContactMessage;
-use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use App\Models\ContactMessage;
 
-class ContactFormController {
-
-    public function show(): string {
+class ContactFormController
+{
+    public function show(): string
+    {
         return <<<HTML
-<style>
-
-.contact-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    margin-top: 20px;
-}
-
-.contact-card {
-    background: #ffffff;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-}
-
-.contact-card h2 {
-    margin-top: 0;
-}
-
-.contact-form label {
-    font-weight: bold;
-    margin-top: 10px;
-    display: block;
-}
-
-.contact-form input,
-.contact-form textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 6px;
-    border: 1px solid #bbb;
-    margin-bottom: 15px;
-    font-size: 1rem;
-}
-
-.contact-form textarea {
-    min-height: 140px;
-}
-
-.contact-form button {
-    background: #e30613;
-    color: #fff;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 6px;
-    font-size: 1rem;
-    cursor: pointer;
-}
-
-.contact-form button:hover {
-    background: #b2050f;
-}
-
-</style>
-
 <section class="page-wrapper">
-<h1>Contact</h1>
 
-<div class="contact-container">
+  <div class="page-header">
+    <h1>Contact</h1>
+    <p class="muted">
+      Heeft u een vraag of wilt u contact opnemen met PMB Amsterdam?
+      Vul het formulier in en wij nemen zo spoedig mogelijk contact met u op.
+    </p>
+  </div>
 
-    <div class="contact-card">
-        <h2>Neem contact op</h2>
+  <div class="contact-grid">
 
-        <form method="post" action="/contact" class="contact-form">
+    <div class="contact-info">
+      <h3>PMB Amsterdam</h3>
+      <p>Projectmanagementbureau<br>Gemeente Amsterdam</p>
 
-            <label>Naam</label>
-            <input type="text" name="name" required>
+      <p><strong>Adres</strong><br>
+        Weesperstraat 113<br>
+        1018 VN Amsterdam
+      </p>
 
-            <label>Email</label>
-            <input type="email" name="email" required>
-
-            <label>Onderwerp</label>
-            <input type="text" name="subject" required>
-
-            <label>Bericht</label>
-            <textarea name="message" required></textarea>
-
-            <button>Versturen</button>
-
-        </form>
+      <p><strong>E-mail</strong><br>pmb@amsterdam.nl</p>
+      <p><strong>Telefoon</strong><br>14 020</p>
     </div>
 
-    <div class="contact-card">
-        <h2>Contactgegevens</h2>
+    <div class="contact-form-card">
+      <form method="post" action="/contact" class="form">
 
-        <p><strong>PMB Amsterdam</strong><br>
-        Gemeente Amsterdam</p>
+        <label>Naam</label>
+        <input name="name" required>
 
-        <p><strong>Email:</strong><br>
-        info@pmb-amsterdam.nl</p>
+        <label>E-mailadres</label>
+        <input type="email" name="email" required>
 
-        <p><strong>Adres:</strong><br>
-        Amstel 1, 1011 PN Amsterdam</p>
+        <label>Onderwerp</label>
+        <input name="subject" required>
 
-        <p><strong>Telefoon:</strong><br>
-        020 - 123 4567</p>
+        <label>Bericht</label>
+        <textarea name="message" rows="5" required></textarea>
+
+        <button class="btn btn--primary" type="submit">
+          Versturen
+        </button>
+
+      </form>
     </div>
 
-</div>
+  </div>
+
 </section>
 HTML;
     }
 
-    public function submit(Request $request, Response $response): Response {
-        ContactMessage::create($request->getParsedBody());
+    public function submit(Request $request): string
+    {
+        $data = $request->getParsedBody();
 
-        $response->getBody()->write("
-            <section class='page-wrapper'>
-                <h1>Bedankt!</h1>
-                <p>Uw bericht is succesvol verzonden. Wij nemen zo snel mogelijk contact met u op.</p>
-            </section>
-        ");
-        return $response;
+        ContactMessage::create([
+            'NAME'    => trim($data['name']),
+            'email'   => trim($data['email']),
+            'SUBJECT' => trim($data['subject']),
+            'message' => trim($data['message']),
+        ]);
+
+        return <<<HTML
+<section class="page-wrapper">
+  <div class="admin-panel">
+    <h2>Bedankt!</h2>
+    <p>Uw bericht is succesvol verzonden.</p>
+    <a href="/" class="btn btn--primary">Terug naar home</a>
+  </div>
+</section>
+HTML;
     }
 }

@@ -6,198 +6,248 @@ use Slim\Factory\AppFactory;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-session_start();
-
-/* ============================================================
-   CONTROLLERS LADEN
-============================================================ */
+// Frontend
 use App\Controllers\HomeController;
+use App\Controllers\PageController;
 use App\Controllers\ProjectController;
 use App\Controllers\PublicationController;
-use App\Controllers\PageController;
+use App\Controllers\ContactFormController;
 
-// AUTH
+// Auth
 use App\Controllers\Auth\UserAuthController;
 use App\Controllers\Auth\RegisterController;
 
-// ADMIN
+// Admin
 use App\Controllers\Admin\AdminDashboardController;
 use App\Controllers\Admin\AdminUserController;
+use App\Controllers\Admin\AdminProjectController;
+use App\Controllers\Admin\AdminContactController;
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $app = AppFactory::create();
 
-/* ============================================================
-   LAYOUT WRAPPER
-============================================================ */
-function renderLayout(string $title, string $content): string {
+/* ============================
+   FLASH MESSAGE (NIET GEBRUIKT)
+============================ */
+function flash(): string {
+    if (!empty($_SESSION['flash'])) {
+        $msg = $_SESSION['flash'];
+        unset($_SESSION['flash']);
+        return "<div class='flash-success'>{$msg}</div>";
+    }
+    return '';
+}
+
+/* ============================
+   ADMIN GUARD
+============================ */
+function requireAdmin(Response $response): ?Response {
+    if (($_SESSION['role'] ?? null) !== 'admin') {
+        return $response->withHeader('Location', '/login')->withStatus(302);
+    }
+    return null;
+}
+
+/* ============================
+   SHARED LAYOUT
+============================ */
+function renderLayout(string $title, string $content): string
+{
+    $username = $_SESSION['user'] ?? null;
+    $role = $_SESSION['role'] ?? null;
+
+    if ($username) {
+        $safeUser = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
+        $adminLink = ($role === 'admin')
+            ? '<a class="user-dd-item" href="/admin">Admin panel</a>'
+            : '';
+
+        $authBlock = <<<HTML
+<div class="user-menu">
+    <button class="user-chip" type="button">
+        <span class="user-chip__dot"></span>
+        <span class="user-chip__name">{$safeUser}</span>
+        <span class="user-chip__chev">▾</span>
+    </button>
+    <div class="user-dd">
+        {$adminLink}
+        <a class="user-dd-item" href="/logout">Uitloggen</a>
+    </div>
+</div>
+HTML;
+    } else {
+        $authBlock = '<a class="login-link" href="/login">Inloggen</a>';
+    }
+
     return <<<HTML
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <title>{$title} - PMB Amsterdam</title>
-    <link rel="stylesheet" href="/css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{$title} - PMB Amsterdam</title>
+<link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
 <header class="topbar">
+<div class="header-container">
+    <div class="logo">
+        <a href="/"><img src="/img/logo.png" alt="PMB Amsterdam"></a>
+    </div>
+
     <nav class="main-nav">
         <ul>
             <li><a href="/">Home</a></li>
             <li><a href="/werken-bij">Werken bij</a></li>
-            <li><a href="/expertise">Expertise</a></li>
             <li><a href="/opdrachten-en-projecten">Projecten</a></li>
+            <li><a href="/expertise">Expertise</a></li>
+            <li><a href="/projectmanagement">Projectmanagement</a></li>
             <li><a href="/publicaties">Publicaties</a></li>
             <li><a href="/contact">Contact</a></li>
-            <li><a href="/login">Login</a></li>
-            <li><a href="/admin">Admin</a></li>
         </ul>
     </nav>
+
+    <div class="header-actions">
+        {$authBlock}
+    </div>
+</div>
 </header>
 
 <main>
 {$content}
 </main>
 
-<footer>© PMB Amsterdam - Gemeente Amsterdam</footer>
+<footer>
+&copy; PMB Amsterdam – Gemeente Amsterdam
+</footer>
+
+<script>
+(() => {
+  const btn = document.querySelector('.user-chip');
+  const dd = document.querySelector('.user-dd');
+  if (!btn || !dd) return;
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    dd.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.user-menu')) dd.classList.remove('open');
+  });
+})();
+</script>
+
 </body>
 </html>
 HTML;
 }
 
-/* ============================================================
+/* ============================
    FRONTEND ROUTES
-============================================================ */
+============================ */
 
-// Home
-$app->get('/', function ($req, $res) {
-    $controller = new HomeController();
-    $html = renderLayout("Home", $controller->index());
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Home',(new HomeController())->index()));
+    return $s;
 });
 
-// Projecten (voorbeeld)
-$app->get('/opdrachten-en-projecten', function ($req, $res) {
-    $controller = new ProjectController();
-    $html = renderLayout("Projecten", $controller->index());
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/werken-bij', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Werken bij',(new PageController())->showBySlug('werken-bij')));
+    return $s;
 });
 
-// Publicaties
-$app->get('/publicaties', function ($req, $res) {
-    $controller = new PublicationController();
-    $html = renderLayout("Publicaties", $controller->index());
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/expertise', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Expertise',(new PageController())->showBySlug('expertise')));
+    return $s;
 });
 
-// Dynamische paginamodellen
-$app->get('/werken-bij', function ($req, $res) {
-    $controller = new PageController();
-    $html = renderLayout("Werken bij", $controller->showBySlug('werken-bij'));
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/projectmanagement', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Projectmanagement',(new PageController())->showBySlug('projectmanagement')));
+    return $s;
 });
 
-$app->get('/expertise', function ($req, $res) {
-    $controller = new PageController();
-    $html = renderLayout("Expertise", $controller->showBySlug('expertise'));
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/opdrachten-en-projecten', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Projecten',(new ProjectController())->index()));
+    return $s;
 });
 
-$app->get('/contact', function ($req, $res) {
-    $controller = new PageController();
-    $html = renderLayout("Contact", $controller->showBySlug('contact'));
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/publicaties', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Publicaties',(new PublicationController())->index()));
+    return $s;
 });
 
-/* ============================================================
-   AUTH ROUTES (LOGIN / REGISTER)
-============================================================ */
-
-// LOGIN FORM
-$app->get('/login', function ($req, $res) {
-    $html = (new UserAuthController())->loginForm();
-    $res->getBody()->write(renderLayout("Inloggen", $html));
-    return $res;
+$app->get('/contact', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Contact',(new ContactFormController())->show()));
+    return $s;
 });
 
-// LOGIN PROCESS
-$app->post('/login', [new UserAuthController(), 'login']);
-
-// LOGOUT
-$app->get('/logout', [new UserAuthController(), 'logout']);
-
-// REGISTER FORM
-$app->get('/register', function ($req, $res) {
-    $html = (new RegisterController())->registerForm();
-    $res->getBody()->write(renderLayout("Registreren", $html));
-    return $res;
+$app->post('/contact', function(Request $r, Response $s){
+    $inner = (new ContactFormController())->submit($r);
+    $s->getBody()->write(renderLayout('Contact',$inner));
+    return $s;
 });
 
-// REGISTER PROCESS
-$app->post('/register', [new RegisterController(), 'register']);
+/* ============================
+   AUTH
+============================ */
 
-/* ============================================================
-   ADMIN PANEL (ALLEEN ROLE = 'admin')
-============================================================ */
-
-// ADMIN DASHBOARD
-$app->get('/admin', function ($req, $res) {
-
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        return $res->withHeader("Location", "/login?error=Geen+admin+rechten")
-                   ->withStatus(302);
-    }
-
-    $controller = new AdminDashboardController();
-    $html = renderLayout("Admin Paneel", $controller->index());
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/login', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Inloggen',(new UserAuthController())->loginForm()));
+    return $s;
 });
 
-// ADMIN: gebruikerslijst
-$app->get('/admin/users', function ($req, $res) {
+$app->post('/login',[new UserAuthController(),'login']);
+$app->get('/logout',[new UserAuthController(),'logout']);
 
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-        return $res->withHeader("Location", "/login?error=Geen+toegang")
-                   ->withStatus(302);
-    }
-
-    $controller = new AdminUserController();
-    $html = renderLayout("Gebruikersbeheer", $controller->list());
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/register', function(Request $r, Response $s){
+    $s->getBody()->write(renderLayout('Registreren',(new RegisterController())->registerForm()));
+    return $s;
 });
 
-// ADMIN: promote user
-$app->get('/admin/user/make-admin/{id}', function ($req, $res, $args) {
-    (new AdminUserController())->promote($args['id']);
-    return $res;
+$app->post('/register',[new RegisterController(),'register']);
+
+/* ============================
+   ADMIN (ADMINS ONLY)
+============================ */
+
+$app->get('/admin', function(Request $r, Response $s){
+    if ($resp = requireAdmin($s)) return $resp;
+    $s->getBody()->write(renderLayout('Admin',(new AdminDashboardController())->index()));
+    return $s;
 });
 
-// ADMIN: demote user
-$app->get('/admin/user/make-user/{id}', function ($req, $res, $args) {
-    (new AdminUserController())->demote($args['id']);
-    return $res;
+$app->get('/admin/users', function(Request $r, Response $s){
+    if ($resp = requireAdmin($s)) return $resp;
+    $s->getBody()->write(renderLayout('Gebruikers',(new AdminUserController())->index()));
+    return $s;
 });
 
-/* ============================================================
-   GENERIC PAGE BY SLUG
-============================================================ */
-$app->get('/page/{slug}', function ($req, $res, $args) {
-    $controller = new PageController();
-    $html = renderLayout($args['slug'], $controller->showBySlug($args['slug']));
-    $res->getBody()->write($html);
-    return $res;
+$app->get('/admin/user/admin/{id}', fn($r,$s,$a)=>
+    (new AdminUserController())->makeAdmin((int)$a['id']) ?: $s
+);
+
+$app->get('/admin/user/user/{id}', fn($r,$s,$a)=>
+    (new AdminUserController())->makeUser((int)$a['id']) ?: $s
+);
+
+$app->get('/admin/projects', function(Request $r, Response $s){
+    if ($resp = requireAdmin($s)) return $resp;
+    $s->getBody()->write(renderLayout('Projectbeheer',(new AdminProjectController())->index()));
+    return $s;
 });
 
-/* ============================================================
-   APP START
-============================================================ */
+$app->post('/admin/projects/add',[new AdminProjectController(),'add']);
+$app->get('/admin/projects/edit/{id}',[new AdminProjectController(),'edit']);
+$app->post('/admin/projects/update/{id}',[new AdminProjectController(),'update']);
+$app->get('/admin/projects/delete/{id}',[new AdminProjectController(),'delete']);
+
+$app->get('/admin/inbox', function(Request $r, Response $s){
+    if ($resp = requireAdmin($s)) return $resp;
+    $s->getBody()->write(renderLayout('Inbox',(new AdminContactController())->index()));
+    return $s;
+});
 
 $app->run();

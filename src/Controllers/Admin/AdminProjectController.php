@@ -5,191 +5,253 @@ use App\Models\Project;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-class AdminProjectController {
-
+class AdminProjectController
+{
     private function adminOnly(): void {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-        if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-            header("Location: /login?error=Geen+rechten");
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            header('Location: /login');
             exit;
         }
     }
 
+    private function uploadDir(): string {
+        // public/uploads/projects/
+        return __DIR__ . '/../../../public/uploads/projects/';
+    }
+
+    private function ensureUploadDir(): void {
+        $dir = $this->uploadDir();
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+    }
+
+    private function sanitizeFilename(string $name): string {
+        $name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $name);
+        return $name ?: ('file_' . time());
+    }
+
     /* ============================
-       INDEX
+       INDEX: lijst + toevoegen
     ============================ */
-    public function index(): string {
+    public function index(): string
+    {
         $this->adminOnly();
 
-        $projects = Project::orderBy('created_at','desc')->get();
-        $rows = '';
+        $projects = Project::orderBy('id', 'desc')->get();
 
+        $cards = '';
         foreach ($projects as $p) {
-            $img = $p->img
-                ? "<img src='/img/projects/{$p->img}' style='height:40px;border-radius:6px'>"
-                : "<span class='muted'>Geen</span>";
+            $id = (int)$p->id;
+            $title = htmlspecialchars((string)$p->title, ENT_QUOTES, 'UTF-8');
+            $desc  = htmlspecialchars((string)$p->description, ENT_QUOTES, 'UTF-8');
 
-            $rows .= "
-            <tr>
-                <td>{$p->id}</td>
-                <td>{$p->title}</td>
-                <td>{$img}</td>
-                <td class='td-actions'>
-                    <a class='btn btn--sm btn--ghost' href='/admin/projects/edit/{$p->id}'>✏️ Bewerken</a>
-                    <a class='btn btn--sm btn--danger' href='/admin/projects/delete/{$p->id}' onclick='return confirm(\"Verwijderen?\")'>🗑️</a>
-                </td>
-            </tr>";
+            $imgHtml = '';
+            if (!empty($p->image)) {
+                $img = htmlspecialchars((string)$p->image, ENT_QUOTES, 'UTF-8');
+                $imgHtml = "<img src=\"/uploads/projects/{$img}\" alt=\"{$title}\" loading=\"lazy\" decoding=\"async\">";
+            } else {
+                $imgHtml = "<div class=\"muted\" style=\"padding:10px 0\">Geen afbeelding</div>";
+            }
+
+            $cards .= <<<HTML
+<div class="admin-project-card">
+  {$imgHtml}
+  <h3>{$title}</h3>
+  <p class="muted">{$desc}</p>
+  <div class="admin-project-actions">
+    <a class="btn btn--primary" href="/admin/projects/edit/{$id}">✏️ Bewerken</a>
+    <a class="btn btn--primary" href="/admin/projects/delete/{$id}" onclick="return confirm('Weet je zeker dat je dit project wilt verwijderen?')">🗑️ Verwijderen</a>
+  </div>
+</div>
+HTML;
+        }
+
+        if (!$cards) {
+            $cards = '<p class="muted">Nog geen projecten.</p>';
         }
 
         return <<<HTML
 <section class="page-wrapper">
-<h1>Projectbeheer</h1>
+  <h1>Projectbeheer</h1>
+  <p class="muted">Projecten toevoegen, bewerken en verwijderen.</p>
 
-<div class="admin-panel">
-<h3 class="admin-panel__title">Bestaande projecten</h3>
+  <div class="admin-panel" style="margin-top:18px">
+    <h3 style="margin-top:0">Project toevoegen</h3>
 
-<table class="admin-table">
-<thead>
-<tr>
-    <th>ID</th>
-    <th>Titel</th>
-    <th>Afbeelding</th>
-    <th>Acties</th>
-</tr>
-</thead>
-<tbody>
-{$rows}
-</tbody>
-</table>
-</div>
+    <form class="apply-form" method="post" action="/admin/projects/add" enctype="multipart/form-data">
+      <label>Titel</label>
+      <input type="text" name="title" required>
 
-<div class="admin-panel" style="margin-top:20px">
-<h3 class="admin-panel__title">Nieuw project toevoegen</h3>
+      <label>Beschrijving</label>
+      <textarea name="description" rows="5" required></textarea>
 
-<form method="post" action="/admin/projects/store" enctype="multipart/form-data" class="form">
-    <label>Titel</label>
-    <input name="title" required>
+      <label>Afbeelding (optioneel)</label>
+      <input type="file" name="image" accept="image/*">
 
-    <label>Beschrijving</label>
-    <textarea name="description" rows="4" required></textarea>
+      <button class="btn btn--primary" type="submit" style="margin-top:10px">Toevoegen</button>
+    </form>
+  </div>
 
-    <label>Afbeelding uploaden</label>
-    <input type="file" name="img" accept="image/*">
-
-    <button class="btn btn--primary" style="margin-top:12px">Opslaan</button>
-</form>
-</div>
+  <div class="admin-projects-grid" style="margin-top:22px">
+    {$cards}
+  </div>
 </section>
 HTML;
     }
 
     /* ============================
-       STORE
+       ADD (POST)
     ============================ */
-    public function store(Request $req, Response $res): Response {
+    public function add(Request $request, Response $response): Response
+    {
         $this->adminOnly();
+        $this->ensureUploadDir();
 
-        $data = $req->getParsedBody();
-        $filename = null;
+        $data = (array)$request->getParsedBody();
+        $title = trim((string)($data['title'] ?? ''));
+        $description = trim((string)($data['description'] ?? ''));
 
-        if (!empty($_FILES['img']['name'])) {
-            $ext = pathinfo($_FILES['img']['name'], PATHINFO_EXTENSION);
-            $filename = uniqid('project_') . '.' . $ext;
-
-            move_uploaded_file(
-                $_FILES['img']['tmp_name'],
-                __DIR__ . '/../../../public/img/projects/' . $filename
-            );
+        if ($title === '' || $description === '') {
+            return $response->withHeader('Location', '/admin/projects')->withStatus(302);
         }
 
+        $filename = null;
+        $files = $request->getUploadedFiles();
+        if (!empty($files['image']) && $files['image']->getError() === UPLOAD_ERR_OK) {
+            $img = $files['image'];
+            $orig = $this->sanitizeFilename((string)$img->getClientFilename());
+            $ext  = strtolower(pathinfo($orig, PATHINFO_EXTENSION)) ?: 'webp';
+            $filename = 'project_' . bin2hex(random_bytes(8)) . '.' . $ext;
+            $img->moveTo($this->uploadDir() . $filename);
+        }
+
+        // ✅ DB: kolom "image" verwacht (pas aan als jouw kolom anders heet)
         Project::create([
-            'title' => $data['title'],
-            'description' => $data['description'],
-            'img' => $filename
+            'title' => $title,
+            'description' => $description,
+            'image' => $filename,
         ]);
 
-        $_SESSION['flash'] = "Project toegevoegd";
-        return $res->withHeader("Location","/admin/projects")->withStatus(302);
+        return $response->withHeader('Location', '/admin/projects')->withStatus(302);
     }
 
     /* ============================
-       EDIT
+       EDIT PAGE (GET) -> string (wordt door index.php in renderLayout gezet)
     ============================ */
-    public function edit(int $id): string {
+    public function editPage(int $id): string
+    {
         $this->adminOnly();
+
         $p = Project::findOrFail($id);
 
-        $preview = $p->img
-            ? "<img src='/img/projects/{$p->img}' style='max-height:120px;border-radius:10px;margin-bottom:10px'>"
-            : "<p class='muted'>Geen afbeelding</p>";
+        $title = htmlspecialchars((string)$p->title, ENT_QUOTES, 'UTF-8');
+        $desc  = htmlspecialchars((string)$p->description, ENT_QUOTES, 'UTF-8');
+
+        $preview = '<p class="muted">Geen afbeelding.</p>';
+        if (!empty($p->image)) {
+            $img = htmlspecialchars((string)$p->image, ENT_QUOTES, 'UTF-8');
+            $preview = <<<HTML
+<div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; margin-bottom:10px">
+  <div style="max-width:380px; width:100%">
+    <img src="/uploads/projects/{$img}" alt="{$title}" style="width:100%; height:auto; border-radius:14px">
+    <div class="muted" style="margin-top:6px; font-size:.9rem">Huidige afbeelding</div>
+  </div>
+</div>
+HTML;
+        }
 
         return <<<HTML
 <section class="page-wrapper">
-<h1>Project bewerken</h1>
+  <h1>Project bewerken</h1>
+  <p class="muted">Pas titel, beschrijving en (optioneel) de afbeelding aan.</p>
 
-<div class="admin-panel">
-{$preview}
+  <div class="admin-panel" style="margin-top:18px">
+    {$preview}
 
-<form method="post" action="/admin/projects/update/{$p->id}" enctype="multipart/form-data" class="form">
+    <form class="apply-form" method="post" action="/admin/projects/update/{$id}" enctype="multipart/form-data">
+      <label>Titel</label>
+      <input type="text" name="title" value="{$title}" required>
 
-    <label>Titel</label>
-    <input name="title" value="{$p->title}" required>
+      <label>Beschrijving</label>
+      <textarea name="description" rows="6" required>{$desc}</textarea>
 
-    <label>Beschrijving</label>
-    <textarea name="description" rows="4" required>{$p->description}</textarea>
+      <label>Nieuwe afbeelding (optioneel)</label>
+      <input type="file" name="image" accept="image/*">
 
-    <label>Nieuwe afbeelding (optioneel)</label>
-    <input type="file" name="img" accept="image/*">
-
-    <button class="btn btn--primary" style="margin-top:12px">Opslaan</button>
-</form>
-</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px">
+        <button class="btn btn--primary" type="submit">Opslaan</button>
+        <a class="btn btn--primary" href="/admin/projects" style="text-decoration:none; background:#e5e7eb; color:#111">Annuleren</a>
+      </div>
+    </form>
+  </div>
 </section>
 HTML;
     }
 
     /* ============================
-       UPDATE
+       UPDATE (POST)
     ============================ */
-    public function update(Request $req, Response $res, array $args): Response {
+    public function update(Request $request, Response $response, array $args): Response
+    {
         $this->adminOnly();
+        $this->ensureUploadDir();
 
-        $data = $req->getParsedBody();
-        $p = Project::findOrFail($args['id']);
+        $id = (int)($args['id'] ?? 0);
+        $p = Project::findOrFail($id);
 
-        $filename = $p->img;
+        $data = (array)$request->getParsedBody();
+        $title = trim((string)($data['title'] ?? ''));
+        $description = trim((string)($data['description'] ?? ''));
 
-        if (!empty($_FILES['img']['name'])) {
-            $ext = pathinfo($_FILES['img']['name'], PATHINFO_EXTENSION);
-            $filename = uniqid('project_') . '.' . $ext;
-
-            move_uploaded_file(
-                $_FILES['img']['tmp_name'],
-                __DIR__ . '/../../../public/img/projects/' . $filename
-            );
+        if ($title === '' || $description === '') {
+            return $response->withHeader('Location', '/admin/projects/edit/' . $id)->withStatus(302);
         }
 
-        $p->update([
-            'title' => $data['title'],
-            'description' => $data['description'],
-            'img' => $filename
-        ]);
+        // upload nieuwe afbeelding? -> overschrijf image
+        $files = $request->getUploadedFiles();
+        if (!empty($files['image']) && $files['image']->getError() === UPLOAD_ERR_OK) {
+            $img = $files['image'];
+            $orig = $this->sanitizeFilename((string)$img->getClientFilename());
+            $ext  = strtolower(pathinfo($orig, PATHINFO_EXTENSION)) ?: 'webp';
+            $filename = 'project_' . bin2hex(random_bytes(8)) . '.' . $ext;
+            $img->moveTo($this->uploadDir() . $filename);
 
-        $_SESSION['flash'] = "Project bijgewerkt";
-        return $res->withHeader("Location","/admin/projects")->withStatus(302);
+            // optioneel: oude verwijderen
+            if (!empty($p->image)) {
+                $old = $this->uploadDir() . basename((string)$p->image);
+                if (is_file($old)) @unlink($old);
+            }
+
+            $p->image = $filename; // ✅ DB kolom image
+        }
+
+        $p->title = $title;
+        $p->description = $description;
+        $p->save();
+
+        return $response->withHeader('Location', '/admin/projects')->withStatus(302);
     }
 
     /* ============================
-       DELETE
+       DELETE (GET)
     ============================ */
-    public function delete(Request $req, Response $res, array $args): Response {
+    public function delete(Request $request, Response $response, array $args): Response
+    {
         $this->adminOnly();
 
-        Project::destroy($args['id']);
-        $_SESSION['flash'] = "Project verwijderd";
+        $id = (int)($args['id'] ?? 0);
+        $p = Project::findOrFail($id);
 
-        return $res->withHeader("Location","/admin/projects")->withStatus(302);
+        // verwijder file mee
+        if (!empty($p->image)) {
+            $path = $this->uploadDir() . basename((string)$p->image);
+            if (is_file($path)) @unlink($path);
+        }
+
+        $p->delete();
+
+        return $response->withHeader('Location', '/admin/projects')->withStatus(302);
     }
 }

@@ -14,5 +14,5 @@ class ContactMessage extends Model
         'message'
     ];
 
-    public $timestamps = false; // omdat je alleen created_at hebt
+    public $timestamps = false; 
 }

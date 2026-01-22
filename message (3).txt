@@ -1,10 +1,10 @@
 Bij de eerste klantgesprek op 18 november
- 2025 om 14:45 spraken we de klant over hen wensen wat ze allemaal 
+ 2025  spraken we de klant over hen wensen wat ze allemaal 
   in de website wouden en wat meer prioriteit heeft. De klant heeft aangegeven.
    Dat de huisstijl van hun oude website aangehouden moet worden. Daarnaast is
     rood de thema kleur. En de website moet uitstralen dat ze opzoek zijn naar klanten. Verder moet er een werkende admin page komen. Daarnaast moet de logo worden gebruikt en het liefst ook een statische website. We hebben met de klant afgesproken om eerst een wireframe te maken zodat de klant enige idee heeft hoe de website deruit gaat zien. En die zouden we dan volgende week aan de klant laten zien zodat de klant enige idee heeft voordat we daadwerkelijk aan de website gaan beginnen
 
-We hadden donderdag 4 december 2025 om 14:15 onze derde klantgesprek. 
+We hadden donderdag 4 december 2025  onze derde klantgesprek. 
 Vandaag was ze doel om onze homepage aan de klant te laten zien zodat
  ze klant op de hoogte was hoe de website deruit ging zien iedereen
  
@@ -20,7 +20,7 @@ Vandaag was ze doel om onze homepage aan de klant te laten zien zodat
     feedback die ik dan in de andere weken kan oppakken
  en de backend moet ook volledig af.
 
-Vandaag Donderdag 8 januari om 12:00 hadden we een klantgesprek.
+Vandaag Donderdag 8 januari hadden we een klantgesprek.
  Dit keer liet iedereen zien hoe ver die was de meeste waren wel
   redelijk ver met hun project. Ik had vandaag zowel de eind website
    laten zien aan de klant de klant vond dat de website der mooi uitzag. 
